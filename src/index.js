@@ -8,6 +8,7 @@ const compose = require('./middlewares/compose');
 const cacheMiddleware = require('./middlewares/cacheMiddleware');
 const httpMiddleware = require('./middlewares/httpMiddleware');
 const addTypenameMiddleware = require('./middlewares/addTypenameMiddleware');
+const clientResolversMiddleware = require('./middlewares/clientResolversMiddleware');
 
 const TinyClient = require('./TinyClient');
 
@@ -44,6 +45,20 @@ const tinyClient = TinyClient({
     addTypenameMiddleware,
     httpMiddleware({
       uri: 'https://countries.trevorblades.com/',
+    }),
+    clientResolversMiddleware({
+      resolvers: {
+        Country: {
+          codeAndName({code, name}) {
+            return `${code} ${name}`;
+          }
+        },
+        State: {
+          other() {
+            return 'extra'
+          }
+        }
+      }
     })
   )
 });
