@@ -4,6 +4,10 @@ const util = require('util');
 const debug = (obj) => {
   console.log(util.inspect(obj, {showHidden: false, depth: null}))
 };
+const compose = require('./middlewares/compose');
+const cacheMiddleware = require('./middlewares/cacheMiddleware');
+const httpMiddleware = require('./middlewares/httpMiddleware');
+const addTypenameMiddleware = require('./middlewares/addTypenameMiddleware');
 
 const TinyClient = require('./TinyClient');
 
@@ -16,24 +20,34 @@ const introspectionResult = require("../schema.json");
 const GET_COUNTRIES = gql`
   query GetCountries {
     countries {
-      code
-      name
+      ...CountryInfo
     }
+  }
+
+  fragment CountryInfo on Country {
+    code
+    name
+    states {
+      ...StateInfo
+    }
+  }
+
+  fragment StateInfo on State {
+    code
+    name
   }
 `;
 
-const schema = createExecutableSchema({
-  schema: introspectionResult.__schema
-});
-const mockedClient = MockedClient({ schema });
-mockedClient.query({
-  query: GET_COUNTRIES
-})
-.then((result) => debug(result));
-
 const tinyClient = TinyClient({
-  uri: 'https://countries.trevorblades.com/',
+  middleware: compose(
+    cacheMiddleware(),
+    addTypenameMiddleware,
+    httpMiddleware({
+      uri: 'https://countries.trevorblades.com/',
+    })
+  )
 });
+
 tinyClient.query({
   query: GET_COUNTRIES
 })
